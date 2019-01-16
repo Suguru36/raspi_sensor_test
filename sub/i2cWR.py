@@ -29,10 +29,8 @@ if __name__ == '__main__':
     # センサsleep解除
     try:
         am2320Tmp.i2cDataW(0x00,[])
-        print("Read")
         #i2cAm2320.write_i2c_block_data(address,0x00,[])
     except:
-        print("NG")
         pass
      
     # 読み取り命令

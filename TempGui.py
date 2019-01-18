@@ -4,11 +4,15 @@
 #2019.01.16 by SGR
 
 import tkinter
+import RaspiSensorTest as RaspiSensorTest
+import RPi.GPIO as GPIO
 
 class TempGui(tkinter.Frame):
     def __init__(self, master=None):
         super().__init__(master, bg="skyblue",)
         self.pack()
+        #RasberryPiデータ読み出しオブジェクト生成
+#        RaspiSensor = RaspiSensorTest()
 
         #温湿度センサーの温度UI
         #温度センサー用のフレーム生成
@@ -38,14 +42,17 @@ class TempGui(tkinter.Frame):
         self.labelUnit2 = tkinter.Label(self.tmpHumOfHum_Frame, text=u'%', bg='lightgray', relief=tkinter.FLAT)
         self.labelUnit2.pack(side=tkinter.TOP) #左から詰める
 
+        self.update()
+
     #---温度の更新
-    def tempUpdate(self, temp):
-        self.tempVal1["text"] = "{:.2f}".format(temp)
+    def  update(self):
+#        RaspiData = RaspiSensor.getData()
+        RaspiData[2, 4]
+        self.tempVal1["text"] = "{:.2f}".format(RaspiData[0])
 
     #---湿度の更新
-    def humUpdate(self, hue):
-        self.humVal1["text"] = "{:.2f}".format(hue)
-        #self.update
+        self.humVal1["text"] = "{:.2f}".format(RaspiData[1])
+        self.after(1000, self.update)
             #この間に
         #
         #
@@ -55,6 +62,4 @@ class TempGui(tkinter.Frame):
 if __name__ == '__main__':
     root = tkinter.Tk()
     app = TempGui(master=root)
-    app.tempUpdate(12.34)
-    app.humUpdate(43.21)
     root.mainloop()

@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 #HAMAMATSU Photon S11059 ColorSenser
 
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 import time
 
-from sub.I2cWR import I2cWR #\i2cWR.py
+from sub.I2cWR import I2cWR #\I2cWR.py
 #from sub.TempGui import TempGui #sub/temp
 
 class RaspiSensorTest(object):
@@ -17,8 +17,8 @@ class RaspiSensorTest(object):
         self.address_AM2320 = 0x5c #温度湿度センサー
 
         #GPIOのセッティング
-        GPIO.setmode(GPIO.BCM)  #GPIO BMC定義
-        GPIO.setup(17,GPIO.OUT) #GPIO17 出力モード
+#        GPIO.setmode(GPIO.BCM)  #GPIO BMC定義
+#        GPIO.setup(17,GPIO.OUT) #GPIO17 出力モード
 
         #UIを生成
 #        mainUi = TempGui()
@@ -37,7 +37,7 @@ class RaspiSensorTest(object):
 
         # 以下　センサー読み出し・ループ
 #        while True:
-        GPIO.output(17,GPIO.HIGH) #GPIO17Hi出力
+#        GPIO.output(17,GPIO.HIGH) #GPIO17Hi出力
         #---センサー読みだし-------
         try:
             am2320.i2cDataW(0x00,[])
@@ -90,7 +90,7 @@ class RaspiSensorTest(object):
 #-------------------------------------
 #
         time.sleep(0.1)
-        GPIO.output(17,GPIO.LOW) #GPIO17Lo出力
+#        GPIO.output(17,GPIO.LOW) #GPIO17Lo出力
 #取得後の待機時間
         time.sleep(0.01)
         return [self.tmp, self.hum]

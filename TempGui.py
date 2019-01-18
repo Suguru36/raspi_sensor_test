@@ -5,15 +5,16 @@
 
 import tkinter
 from sub.RaspiSensorTest import RaspiSensorTest
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 
 class TempGui(tkinter.Frame):
     def __init__(self, master=None):
         super().__init__(master, bg="skyblue",)
         self.pack()
-        
+        self.t=0
+        self.h=0
         #RasberryPiデータ読み出しオブジェクト生成
-        self.tmpAndHumData = RaspiSensorTest()
+#        self.tmpAndHumData = RaspiSensorTest()
         #温湿度センサーの温度UI
         #温度センサー用のフレーム生成
         self.tmpHumOfTemp_Frame = tkinter.Frame(master=None)
@@ -47,9 +48,11 @@ class TempGui(tkinter.Frame):
     #---温度の更新
     def update(self):
         #RasberryPiデータ読み出しオブジェクト生成
-        self.tmpAndHumData = RaspiSensorTest()
-        RaspiData = tmpAndHumData.getData()
-        RaspiData=[5, 4]
+#        self.tmpAndHumData = RaspiSensorTest()
+#        RaspiData = tmpAndHumData.getData()
+        self.t=self.t+1
+        self.h=self.h+1
+        RaspiData=[self.t, self.h]
         self.tempVal1["text"] = "{:.2f}".format(RaspiData[0])
 
     #---湿度の更新

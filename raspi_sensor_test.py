@@ -50,8 +50,9 @@ while True:
     i=[7,8,9]
     hum = float(block[2] << 8 | block[3])/10
     tmp = float(block[4] << 8 | block[5])/10
-    print('hum=%.2f'  %hum) # 湿度表示
-    print('Temp=%.2f' %tmp) # 温度表示
+   #UI更新
+   mainUi.tempUpdate(tmp)
+   mainUi.humUpdate(hum)
 
 #
 #------ s11059読み出し------

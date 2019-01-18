@@ -7,7 +7,7 @@ import smbus
 import time
 
 #------- class
-class i2cWR(object):
+class I2cWR(object):
     def __init__(self, dviceAdress):
         self.dviceAdress = dviceAdress
         self.i2c=smbus.SMBus(1)
@@ -25,14 +25,14 @@ class i2cWR(object):
 if __name__ == '__main__':
     #am2320オブジェクト生成
     am2320Tmp = i2cWR(0x5c)
-    
+
     # センサsleep解除
     try:
         am2320Tmp.i2cDataW(0x00,[])
         #i2cAm2320.write_i2c_block_data(address,0x00,[])
     except:
         pass
-     
+
     # 読み取り命令
     time.sleep(0.003)
     am2320Tmp.i2cDataW(0x03,[0x00,0x04])
@@ -41,6 +41,6 @@ if __name__ == '__main__':
     block=am2320Tmp.i2cDataR(0,6)
     hum = float(block[2] << 8 | block[3])/10
     tmp = float(block[4] << 8 | block[5])/10
-    
+
     print('hum=%.2f'  %hum) # 湿度表示
-    print('Temp=%.2f' %tmp) # 温度表示    
+    print('Temp=%.2f' %tmp) # 温度表示

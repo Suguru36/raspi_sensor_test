@@ -1,4 +1,5 @@
-import sys
+#! /usr/bin/env python
+# coding: UTF-8import sys
 import subprocess
 
 ### 定数

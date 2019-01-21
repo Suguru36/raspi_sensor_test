@@ -5,7 +5,7 @@
 import RPi.GPIO as GPIO
 import time
 
-from sub.I2cWR import I2cWR #sub\i2cWR.py
+from sub.I2cWR import I2cWR #\i2cWR.py
 #from sub.TempGui import TempGui #sub/temp
 
 class RaspiSensorTest(object):
@@ -24,8 +24,8 @@ class RaspiSensorTest(object):
 #        mainUi = TempGui()
 
         #各センサーオブジェクトを生成
-        s11059 = I2cWR(address_S11059)
-        am2320 = I2cWR(address_AM2320)
+        s11059 = I2cWR(self.address_S11059)
+        am2320 = I2cWR(self.address_AM2320)
 
         #s11059センサー初期設定-----
         time.sleep(0.003)

@@ -8,6 +8,7 @@ from sub.RaspiSensorTest import RaspiSensorTest
 #import RPi.GPIO as GPIO
 
 class TempGui(tkinter.Frame):
+    """Top Level GUI"""
     def __init__(self, master=None):
         super().__init__(master, bg="skyblue",)
         self.pack()

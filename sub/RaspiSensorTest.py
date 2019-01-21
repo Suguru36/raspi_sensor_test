@@ -4,17 +4,15 @@
 
 #import RPi.GPIO as GPIO
 import time
-
 from sub.I2cWR import I2cWR #\I2cWR.py
-#from sub.TempGui import TempGui #sub/temp
 
 class RaspiSensorTest(object):
     def __init__(self):
         #--initial settimg---
         #
         #デバイスのスレイブアドレス
-        self.address_S11059 = 0x2a #浜フォトカラーセンサー
-        self.address_AM2320 = 0x5c #温度湿度センサー
+        self._address_s11059 = 0x2a #浜フォトカラーセンサー
+        self._address_am2320 = 0x5c #温度湿度センサー
 
         #GPIOのセッティング
 #        GPIO.setmode(GPIO.BCM)  #GPIO BMC定義
@@ -24,8 +22,8 @@ class RaspiSensorTest(object):
 #        mainUi = TempGui()
 
         #各センサーオブジェクトを生成
-        s11059 = I2cWR(self.address_S11059)
-        am2320 = I2cWR(self.address_AM2320)
+        s11059 = I2cWR(self._address_s11059)
+        am2320 = I2cWR(self._address_am2320)
 
         #s11059センサー初期設定-----
         time.sleep(0.003)
@@ -33,7 +31,7 @@ class RaspiSensorTest(object):
         s11059.i2cDataW(0x00,[0xe4,0x06,0x04])
         time.sleep(0.003)
 #-----------------------------------------------------
-    def getData(self):
+    def get_data(self):
 
         # 以下　センサー読み出し・ループ
 #        while True:
@@ -50,10 +48,10 @@ class RaspiSensorTest(object):
         am2320.i2cDataW(0x03,[0x00,0x04])
         # データ受取
         time.sleep(0.015)
-        block=am2320.i2cDataR(0,6)
+        block = am2320.i2cDataR(0,6)
         i=[7,8,9]
-        self.hum = float(block[2] << 8 | block[3])/10
-        self.tmp = float(block[4] << 8 | block[5])/10
+        self._hum = float(block[2] << 8 | block[3])/10
+        self._tmp = float(block[4] << 8 | block[5])/10
         #UI更新
 #           mainUi.tempUpdate(tmp)
 #           mainUi.humUpdate(hum)
@@ -93,7 +91,7 @@ class RaspiSensorTest(object):
 #        GPIO.output(17,GPIO.LOW) #GPIO17Lo出力
 #取得後の待機時間
         time.sleep(0.01)
-        return [self.tmp, self.hum]
+        return [self._tmp, self._hum]
 #------------------------------------------------
 if __name__ == '__main__':
     root=tkinter.Tk()

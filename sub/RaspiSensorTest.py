@@ -7,12 +7,12 @@ import time
 from sub.I2cWR import I2cWR #\I2cWR.py
 
 class RaspiSensorTest(object):
+    #デバイスのスレイブアドレス
+    _address_s11059 = 0x2a #浜フォトカラーセンサー
+    _address_am2320 = 0x5c #温度湿度センサー
+
     def __init__(self):
         #--initial settimg---
-        #
-        #デバイスのスレイブアドレス
-        self._address_s11059 = 0x2a #浜フォトカラーセンサー
-        self._address_am2320 = 0x5c #温度湿度センサー
 
         #各センサーオブジェクトを生成
         self.s11059 = I2cWR(self._address_s11059)

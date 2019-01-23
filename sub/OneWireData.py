@@ -17,13 +17,18 @@ class OneWireDataRead(object):
 
     def read_temp(self):
 #----------ファイル内容取得
+        start = time.time()
         self.catdata = subprocess.Popen(['cat',self.device_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out,err = self.catdata.communicate()
         self.out_decode = out.decode('utf-8')
         self.lines = self.out_decode.split('\n')
+        elapsed_time =  time.time() - start
+        print(elapsed_time)
+
 #----------必要データの抜き出し
         while self.lines[0].strip()[-3:] != 'YES':
-            time.sleep(0.2)
+            pass
+        #time.sleep(0.2)
 #----------ファイル内容取得
         self.catdata = subprocess.Popen(['cat',self.device_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out,err = self.catdata.communicate()

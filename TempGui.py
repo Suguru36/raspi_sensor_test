@@ -6,19 +6,21 @@
 import tkinter
 import tkinter.simpledialog as sd
 from sub.RaspiSensorTest import RaspiSensorTest
-from sub.OneWireData import OneWireDataRead
+#from sub.OneWireData import OneWireDataRead
 import RPi.GPIO as GPIO
+import time
 
 
 class TempGui(tkinter.Frame):
-    
+
     """Top Level GUI"""
     def __init__(self, master=None):
+        self.num = 0
         super().__init__(master, bg="skyblue",)
         self.pack()
         #RasberryPiデータ読み出しオブジェクト生成
         self.raspi_data1 = RaspiSensorTest()
-        self.one_wire_temp = OneWireDataRead()
+#        self.one_wire_temp = OneWireDataRead()
 
         #温湿度センサーの温度UI---------------------------------------------
         #温度センサー用のフレーム生成
@@ -56,7 +58,7 @@ class TempGui(tkinter.Frame):
         self.label_temp_one_w = tkinter.Label(self.tmp_one_w_frame, text=u'接触温度センサー　温度:', bg='lightgray', relief=tkinter.FLAT)
         self.label_temp_one_w.pack(side=tkinter.LEFT) #左から詰める
         #湿度表示部分
-        self.tmp_Val2 = tkinter.Label(self.tmp_one_w_frame, text=u'xxxx', bg='pink', relief=tkinter.FLAT)
+        self.tmp_Val2 = tkinter.Label(self.tmp_one_w_frame, text=u'xxxxx', bg='pink', relief=tkinter.FLAT)
         self.tmp_Val2.pack(side=tkinter.LEFT) #左から詰める
         #湿度の単位
         self.labelUnit3 = tkinter.Label(self.tmp_one_w_frame, text=u'℃', bg='lightgray', relief=tkinter.FLAT)
@@ -94,17 +96,19 @@ class TempGui(tkinter.Frame):
         self.update()
 
     #---温度の更新
-    def update(self):
 
+    def update(self):
+        """100ms/１回の更新頻度"""
         self.RaspiData = self.raspi_data1.get_data()
         self.tempVal1["text"] = "{:.2f}".format(self.RaspiData[0])
+
         #---湿度の更新
         self.humVal1["text"] = "{:.2f}".format(self.RaspiData[1])
         #---接触温度の更新
-        self.wire_temp_sens = self.one_wire_temp.read_temp()
-        self.tmp_Val2["text"] = "{:.2f}".format(self.wire_temp_sens)
+        """self.wire_temp_sens = self.one_wire_temp.read_temp()
+        self.tmp_Val2["text"] = "{:.2f}".format(self.wire_temp_sens)"""
         #---温度を監視するルーチンをここに
-        if self.wire_temp_sens > float(self.tmp_target["text"]):
+        if 10 > float(self.tmp_target["text"]):
             #設定温度より高いときの制御をここへ
             self.label_on_off["text"] = "ON"
             self.label_on_off["bg"] = "red"
@@ -116,7 +120,7 @@ class TempGui(tkinter.Frame):
             self.label_on_off.relief=tkinter.SUNKEN
         #--------------------------
 
-        self.after(1000, self.update)
+        self.after(100, self.update)
         #この間に
 
     def temp_set(self):

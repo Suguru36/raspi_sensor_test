@@ -65,9 +65,20 @@ class TempGui(tkinter.Frame):
                 #表示部分
                 self.tmp_target = tkinter.Label(self.tmp_target_frame,  text = default_value, bg='white', relief=tkinter.FLAT)
                 self.tmp_target.pack(side=tkinter.RIGHT) #左から詰める
-                #設定ボタン
-                self.temp_set_button = tkinter.Button(self.tmp_target_frame, text = button_name, command = self.set_target_temp)
-                self.temp_set_button.pack(side=tkinter.RIGHT) #左から詰める
+
+                #設定ボタン 温度設定キーボード版
+#                self.temp_set_button = tkinter.Button(self.tmp_target_frame, text = button_name, command = self.set_target_temp)
+#                self.temp_set_button.pack(side=tkinter.RIGHT) #左から詰める
+
+                #温度設定＋＆ーボタン版
+                #プラス
+                self.temp_set_button_P = tkinter.Button(self.tmp_target_frame, text = "+", command = self.set_target_temp_p)
+                self.temp_set_button_P.pack(side=tkinter.RIGHT) #左から詰める
+                #マイナス
+                self.temp_set_button_M = tkinter.Button(self.tmp_target_frame, text = "-", command = self.set_target_temp_m)
+                self.temp_set_button_M.pack(side=tkinter.RIGHT) #左から詰める
+
+
             def get_target_value(self):
                 """設定温度取得メソッド"""
                 return int(self.tmp_target["text"])
@@ -77,6 +88,12 @@ class TempGui(tkinter.Frame):
             def set_target_temp(self):
                 """temp_set_button押下時に設定温度を入力するファンクション"""
                 self.tmp_target["text"] = "{:d}".format(sd.askinteger("設定温度", "設定温度を入力"))
+            def set_target_temp_p(self):
+                """設定温度をインクリメントする"""
+                self.tmp_target["text"] = int(self.tmp_target["text"]) + 1
+            def set_target_temp_m(self):
+                """設定温度をディクリメントする"""
+                self.tmp_target["text"] = int(self.tmp_target["text"]) - 1
 
 
         #-----------------------------------------------------------------------------

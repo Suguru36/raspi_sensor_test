@@ -8,7 +8,7 @@ import spidev
 from time import sleep
 
 #----------
-class SpiDev(object):
+class SpiRW(object):
     """SPI通信を行うオブジェクトを生成する"""
     def __init__(self, byte_unit, devide_number):
         """SPIデバイスの生成
@@ -32,24 +32,21 @@ class SpiDev(object):
 #----------
     def spi_write(self, w_address, w_data):
         """w_address=書き込みアドレス, w_data＝書き込みデータ"""
-        spi.xfer([w_address])             # 書き込みアドレス
+        self.spi.xfer([w_address])             # 書き込みアドレス
         sleep(0.1)                        # wait for saving to register
-        bits = spi.xfer([w_data])         # 書き込みデータ
+        bits = self.spi.xfer([w_data])         # 書き込みデータ
         return bits                       # 書き込みデータをReturn
 #-----------
     def spiquit(self):
         """SPIのクローズ"""
         self.spi.close()
 
-
-#------------------------------------------------------------------------
-#------------        Test Code       ------------------------------------
 #------------------------------------------------------------------------
 if __name__ == '__main__':
 #    try:
-        spi0 = SpiDev(8, 0) # 送受信Byte=8でSPI_CE0_Nに接続されたデバイスオブジェクト生成
-        spi1 = SpiDev(8, 1) # 送受信Byte=8でSPI_CE1_Nに接続されたデバイスオブジェクト生成
-        while True:         # 以下無限ループ
+        spi0 = SpiRW(8, 0)
+        spi1 = SpiRW(8, 1)
+        while True:
             #-----温度取得 SPIデバイス 0-----
             temp0_lsb = spi0.spi_read(0x01)    # 温度の下位８Bit
             temp0_msb = (spi0.spi_read(0x02) ) # 温度の上位８Bit

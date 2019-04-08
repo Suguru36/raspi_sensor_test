@@ -9,6 +9,8 @@ from sub.GetAruduinoDataHeatCont import GetAruduinoDataHeatCnt
 import RPi.GPIO as GPIO
 import time
 from sub.SpiRW import SpiRW
+import csv
+#import pandas
 
 #---------------------------------------------------------
 
@@ -18,8 +20,9 @@ from sub.SpiRW import SpiRW
 
 class TempGui(tkinter.Frame):
    #--------- Data Cluster --------
-    arduino_param_0 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'heatter_condition' : False}
-    arduino_param_1 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'heatter_condition' : False}
+    arduino_param_0 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
+    arduino_param_1 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
+    arduino_param_2 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
 
 
     """Top Level GUI"""
@@ -123,7 +126,7 @@ class TempGui(tkinter.Frame):
                 self.label_on_off.relief=tkinter.SUNKEN
         #-----------------------------------------------------------------------------
         class ArduinoDataFrame(object):
-            """Arduino単位のUIを発生させるクラス（２個分）"""
+            """Arduino単位のUIを発生させるクラス（3個分）"""
             def __init__(self):
                 #Arduino単位のフレームを生成
                 arduino0_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
@@ -150,37 +153,76 @@ class TempGui(tkinter.Frame):
                 self.distance1    = SensorDataUiFrame(arduino1_fraeme, "測距センサー", "mm", "pink", "lightgray", "00000")
                 self.cnt_target1   = TempControlTargetFrame(arduino1_fraeme, "設定温度", "Set", "55", "℃")
                 self.heater_state1 = HeaterIndicatorFrame(arduino1_fraeme, "ヒーター(未完成)")
+
+                #Arduino単位のフレームを生成
+                arduino2_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
+                arduino2_fraeme.pack(anchor=tkinter.CENTER, side = tkinter.LEFT, padx=20) #anchor=tkinter.CENTER 中心に揃えて
+                #メインフレームのタイトル
+                self.TempCntLabel_2 = tkinter.Label(arduino2_fraeme, text= 'Temp Control 3' , bg='lightgray', relief=tkinter.FLAT)
+                self.TempCntLabel_2.pack(side=tkinter.TOP, anchor=tkinter.W) #左から詰める
+                #各センサーのＵＩ生成                self.ir_temp     = SensorDataUiFrame(arduino1_fraeme, "ワーク表面温度", "UNIT", "Yellow", "lightgray", "00000")
+                self.ir_temp2     = SensorDataUiFrame(arduino2_fraeme, "ワーク表面温度", "℃", "Yellow", "lightgray", "00000")
+                self.amb_temp2    = SensorDataUiFrame(arduino2_fraeme, "周辺温度", "℃", "skyblue", "lightgray", "00000")
+                self.distance2    = SensorDataUiFrame(arduino2_fraeme, "測距センサー", "mm", "pink", "lightgray", "00000")
+                self.cnt_target2   = TempControlTargetFrame(arduino2_fraeme, "設定温度", "Set", "55", "℃")
+                self.heater_state2 = HeaterIndicatorFrame(arduino2_fraeme, "ヒーター(未完成)")
 #----------------------------------------------------
 
         self.num = 0
 
         super().__init__(master, bg="skyblue",)
         self.pack()
+        #設定ファイルから初期設定地を取得してクラス変数に格納する
+        with open("/home/pi/dev/raspi_sensor_test/HeatCont.ini" , 'r' ) as self.FileIni:
+            #ファイルの内容取得
+            self.read_csv = csv.reader( self.FileIni, delimiter = '\t')
+             #１行目のヘッダを無視する
+            next(self.read_csv)
+            #設定ファイルの内容をクラス変数に格納する
+            self.arduino_param_0['target_temp']    = int((next(self.read_csv))[1]) #１行目のデータを格納
+            self.arduino_param_0['distance_limit'] = int((next(self.read_csv))[1]) #２行目のデータを格納
+            self.arduino_param_1['target_temp']    = int((next(self.read_csv))[1]) #３行目のデータを格納
+            self.arduino_param_1['distance_limit'] = int((next(self.read_csv))[1]) #４行目のデータを格納
+            self.arduino_param_2['target_temp']    = int((next(self.read_csv))[1]) #３行目のデータを格納
+            self.arduino_param_2['distance_limit'] = int((next(self.read_csv))[1]) #４行目のデータを格納
+
         #RasberryPiデータ読み出しオブジェクト生成
         self.ardu0 = GetAruduinoDataHeatCnt(8,0) # 8Byte単位でデバイス0番
-        self.ardu1 = GetAruduinoDataHeatCnt(8,1) # 8Byte単位でデバイス0番
+        self.ardu1 = GetAruduinoDataHeatCnt(8,1) # 8Byte単位でデバイス1番
+        self.ardu2 = GetAruduinoDataHeatCnt(8,2) # 8Byte単位でデバイス2番
         self.main_ui = ArduinoDataFrame()        #メインＵＩ生成
+
+
+
         #クラス変数(UIの値)初期値設定
         self.arduino_param_0['ir_temp'] = 999.99   #温度設定
         self.arduino_param_0['ambient_temp'] = 999.99
         self.arduino_param_0['distance'] =9999
-        self.arduino_param_0['target_temp'] = 45
         self.arduino_param_0['heatter_condition'] = False
+
         self.main_ui.ir_temp0.change_value(self.arduino_param_0['ir_temp'])
         self.main_ui.amb_temp0.change_value(self.arduino_param_0['ambient_temp'])
-        self.main_ui.distance0.change_distance(self.arduino_param_0['distance'])
         self.main_ui.distance0.change_distance(self.arduino_param_0['distance'])
         self.main_ui.cnt_target0.set_target_value(self.arduino_param_0['target_temp'])
 
         self.arduino_param_1['ir_temp'] = 999.99   #温度設定
         self.arduino_param_1['ambient_temp'] = 999.99
         self.arduino_param_1['distance'] =9999
-        self.arduino_param_1['target_temp'] = 45
         self.arduino_param_1['heatter_condition'] = False
         self.main_ui.ir_temp1.change_value(self.arduino_param_1['ir_temp'])
         self.main_ui.amb_temp1.change_value(self.arduino_param_1['ambient_temp'])
         self.main_ui.distance1.change_distance(self.arduino_param_1['distance'])
         self.main_ui.cnt_target1.set_target_value(self.arduino_param_1['target_temp'])
+
+
+        self.arduino_param_2['ir_temp'] = 999.99   #温度設定
+        self.arduino_param_2['ambient_temp'] = 999.99
+        self.arduino_param_2['distance'] =9999
+        self.arduino_param_2['heatter_condition'] = False
+        self.main_ui.ir_temp2.change_value(self.arduino_param_2['ir_temp'])
+        self.main_ui.amb_temp2.change_value(self.arduino_param_2['ambient_temp'])
+        self.main_ui.distance2.change_distance(self.arduino_param_2['distance'])
+        self.main_ui.cnt_target2.set_target_value(self.arduino_param_2['target_temp'])
 
         self.update()
 
@@ -219,6 +261,22 @@ class TempGui(tkinter.Frame):
         self.arduino_param_1['target_temp'] = self.main_ui.cnt_target1.get_target_value()
         self.ardu1.SetTempTarget(self.arduino_param_1['target_temp'])
 
+        #-----------------------------
+        #Arduino2のデータ取得
+        self.arduino2_data = self.ardu2.GetDataArd()
+        #放射温度
+        self.arduino_param_2['ir_temp'] = (self.arduino2_data)[0]   #温度設定
+        self.main_ui.ir_temp2.change_value(self.arduino_param_2['ir_temp'])
+        #周辺温度
+        self.arduino_param_2['ambient_temp'] = (self.arduino2_data)[1]   #温度設定
+        self.main_ui.amb_temp2.change_value(self.arduino_param_2['ambient_temp'])
+        #レーザー測距計
+        self.arduino_param_2['distance'] = (self.arduino2_data)[2]   #温度設定
+        self.main_ui.distance2.change_distance(self.arduino_param_2['distance'])
+        #UIの設定温度取得
+        self.arduino_param_2['target_temp'] = self.main_ui.cnt_target2.get_target_value()
+        self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
+
         #---温度を監視するルーチンをここに
 #        if 10 > float(self.tmp_target["text"]):
             #設定温度より高いときの制御をここへ
@@ -228,7 +286,7 @@ class TempGui(tkinter.Frame):
 #            self.main_ui.heater_state0.set_state_OFF()
         #--------------------------
 
-        self.after(1000, self.update)
+        self.after(1, self.update)
         #この間に
 
 

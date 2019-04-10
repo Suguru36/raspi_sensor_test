@@ -5,6 +5,7 @@
 
 import tkinter
 import tkinter.simpledialog as sd
+from tkinter import messagebox
 from sub.GetAruduinoDataHeatCont import GetAruduinoDataHeatCnt
 import RPi.GPIO as GPIO
 import time
@@ -27,6 +28,34 @@ class TempGui(tkinter.Frame):
 
     """Top Level GUI"""
     def __init__(self, master=None):
+        #-----------------------------------------------------------------------------
+        class UserControler(object):
+            """ユーザー用コントロールボックスオブジェクト"""
+            #----------------------------------------------
+            def __init__(self):
+                #GPIOのPin指定モードをBCMへ設定
+                GPIO.setmode(GPIO.BCM)
+                #------  使用するピンの入出力宣言
+                #出力ピン
+                GPIO.setup(22, GPIO.OUT) #GPIO22 出力 CNT0
+                GPIO.setup(23, GPIO.OUT) #GPIO23 出力 CNT1
+                GPIO.setup(24, GPIO.OUT) #GPIO24 出力 CNT2
+                #入力ピン
+                GPIO.setup(25, GPIO.IN, pull_up_down = GPIO.PUD_UP) #GPIO25 入力　SW Pullup
+                GPIO.setup(26, GPIO.IN, pull_up_down = GPIO.PUD_DOWN) #GPIO26 入力　EMO Pulldown
+                #出力ピンの初期値設定
+                GPIO.output(22, 0)      #Lo出力
+                GPIO.output(23, 0)      #Lo出力
+                GPIO.output(24, 0)      #Lo出力0
+
+            #----------------------------------------------
+            def set_led_mode(self, cnt2 ,cnt1 ,cnt0):
+                """000:スタンバイ ,001青, 010緑, 011加熱中表示, 100加熱保温中, 101加熱完了呼び出し"""
+                #出力ピンの初期値設定
+                GPIO.output(22, cnt0)      #Lo出力
+                GPIO.output(23, cnt1)      #Lo出力
+                GPIO.output(24, cnt2)      #Lo出力
+
         #-----------------------------------------------------------------------------
         class SensorDataUiFrame(object):
             """各センサーのデータを表示する最小のフレームクラス"""
@@ -167,7 +196,7 @@ class TempGui(tkinter.Frame):
                 self.cnt_target2   = TempControlTargetFrame(arduino2_fraeme, "設定温度", "Set", "55", "℃")
                 self.heater_state2 = HeaterIndicatorFrame(arduino2_fraeme, "ヒーター(未完成)")
 #----------------------------------------------------
-
+#-------まだTopLevelClassの__init__は続くよ
         self.num = 0
 
         super().__init__(master, bg="skyblue",)
@@ -191,7 +220,8 @@ class TempGui(tkinter.Frame):
         self.ardu1 = GetAruduinoDataHeatCnt(8,1) # 8Byte単位でデバイス1番
         self.ardu2 = GetAruduinoDataHeatCnt(8,2) # 8Byte単位でデバイス2番
         self.main_ui = ArduinoDataFrame()        #メインＵＩ生成
-
+        self.usr_cnt = UserControler()           #ユーザーコントロールボックスオブジェクト
+        self.usr_cnt.set_led_mode(0,0,0)         #コントロールボックスのLEDを初期化
 
 
         #クラス変数(UIの値)初期値設定
@@ -277,16 +307,23 @@ class TempGui(tkinter.Frame):
         self.arduino_param_2['target_temp'] = self.main_ui.cnt_target2.get_target_value()
         self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
 
-        #---温度を監視するルーチンをここに
+        #---温度＋距離＋EMO,WSを監視するルーチンをここに追記する！！！
+
+
+
+
 #        if 10 > float(self.tmp_target["text"]):
             #設定温度より高いときの制御をここへ
 #            self.main_ui.heater_state0.set_state_ON()
 #        else:
             #設定温度よりも低いときの制御をここへ
 #            self.main_ui.heater_state0.set_state_OFF()
-        #--------------------------
 
-        self.after(1, self.update)
+
+
+
+        #--------------------------
+        self.after(1, self.update) #1ms毎に実行する
         #この間に
 
 
@@ -296,4 +333,17 @@ if __name__ == '__main__':
     root.title("温度湿度測定") #Windowタイトル設定
 #    root.geometry("300x200")  #Windowサイズ設定
     app = TempGui(master=root)
+
+#----- GUI が閉じられたら本当に閉じるのか？とポップアップメニュー
+    def on_closing():
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+#------------------------------------------
+#- プログラム停止後の初期化処理
+    #GPIOの初期化
+    GPIO.cleanup()
+#----------------------------------
+
     root.mainloop()

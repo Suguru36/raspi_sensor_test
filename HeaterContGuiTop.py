@@ -25,6 +25,14 @@ class TempGui(tkinter.Frame):
     arduino_param_1 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
     arduino_param_2 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
 
+    #-------- class 定数の定義 GPIOのPin番号定義(BCM)
+    _CNT0 = 22         #CNT0 コントロールBit0
+    _CNT1 = 23         #CNT2 コントロールBit1
+    _CNT2 = 24         #CNT2 コントロールBit2
+
+    _SW_FN  = 25       #ファンクションスイッチのGPIO
+    _EMO_SW = 26       #EMOスイッチのGPIO
+
 
     """Top Level GUI"""
     def __init__(self, master=None):
@@ -37,24 +45,39 @@ class TempGui(tkinter.Frame):
                 GPIO.setmode(GPIO.BCM)
                 #------  使用するピンの入出力宣言
                 #出力ピン
-                GPIO.setup(22, GPIO.OUT) #GPIO22 出力 CNT0
-                GPIO.setup(23, GPIO.OUT) #GPIO23 出力 CNT1
-                GPIO.setup(24, GPIO.OUT) #GPIO24 出力 CNT2
+                GPIO.setup(TempGui._CNT0, GPIO.OUT) #GPIO22 出力 CNT0
+                GPIO.setup(TempGui._CNT1, GPIO.OUT) #GPIO23 出力 CNT1
+                GPIO.setup(TempGui._CNT2, GPIO.OUT) #GPIO24 出力 CNT2
                 #入力ピン
-                GPIO.setup(25, GPIO.IN, pull_up_down = GPIO.PUD_UP) #GPIO25 入力　SW Pullup
-                GPIO.setup(26, GPIO.IN, pull_up_down = GPIO.PUD_DOWN) #GPIO26 入力　EMO Pulldown
+                GPIO.setup(TempGui._SW_FN, GPIO.IN, pull_up_down = GPIO.PUD_UP) #GPIO25 入力　SW Pullup
+                GPIO.setup(TempGui._EMO_SW, GPIO.IN, pull_up_down = GPIO.PUD_DOWN) #GPIO26 入力　EMO Pulldown
                 #出力ピンの初期値設定
-                GPIO.output(22, 0)      #Lo出力
-                GPIO.output(23, 0)      #Lo出力
-                GPIO.output(24, 0)      #Lo出力0
+                GPIO.output(TempGui._CNT0, 0)      #Lo出力
+                GPIO.output(TempGui._CNT1, 0)      #Lo出力
+                GPIO.output(TempGui._CNT2, 1)      #Lo出力0
 
             #----------------------------------------------
             def set_led_mode(self, cnt2 ,cnt1 ,cnt0):
                 """000:スタンバイ ,001青, 010緑, 011加熱中表示, 100加熱保温中, 101加熱完了呼び出し"""
+
                 #出力ピンの初期値設定
-                GPIO.output(22, cnt0)      #Lo出力
-                GPIO.output(23, cnt1)      #Lo出力
-                GPIO.output(24, cnt2)      #Lo出力
+                GPIO.output(TempGui._CNT0, cnt0)      #Lo出力
+                GPIO.output(TempGui._CNT1, cnt1)      #Lo出力
+                GPIO.output(TempGui._CNT2, cnt2)      #Lo出力
+
+            #----------------------------------------------
+            def emo_check(self):
+                print(GPIO.input(TempGui._EMO_SW))
+
+            #----------------------------------------------
+            def start_sw_check(self):
+                print(GPIO.input(TempGui._SW_FN))
+
+
+
+
+
+
 
         #-----------------------------------------------------------------------------
         class SensorDataUiFrame(object):
@@ -220,8 +243,9 @@ class TempGui(tkinter.Frame):
         self.ardu1 = GetAruduinoDataHeatCnt(8,1) # 8Byte単位でデバイス1番
         self.ardu2 = GetAruduinoDataHeatCnt(8,2) # 8Byte単位でデバイス2番
         self.main_ui = ArduinoDataFrame()        #メインＵＩ生成
+
         self.usr_cnt = UserControler()           #ユーザーコントロールボックスオブジェクト
-        self.usr_cnt.set_led_mode(0,0,0)         #コントロールボックスのLEDを初期化
+#        self.usr_cnt.set_led_mode(0,0,1)         #コントロールボックスのLEDを初期化
 
 
         #クラス変数(UIの値)初期値設定
@@ -308,8 +332,8 @@ class TempGui(tkinter.Frame):
         self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
 
         #---温度＋距離＋EMO,WSを監視するルーチンをここに追記する！！！
-
-
+        self.usr_cnt.emo_check()
+        self.usr_cnt.start_sw_check()
 
 
 #        if 10 > float(self.tmp_target["text"]):
@@ -338,12 +362,12 @@ if __name__ == '__main__':
     def on_closing():
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             root.destroy()
+            #- プログラム停止後の初期化処理
+            #GPIOの初期化
+            GPIO.cleanup()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
 #------------------------------------------
-#- プログラム停止後の初期化処理
-    #GPIOの初期化
-    GPIO.cleanup()
 #----------------------------------
 
     root.mainloop()

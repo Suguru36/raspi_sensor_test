@@ -10,6 +10,7 @@ from sub.GetAruduinoDataHeatCont import GetAruduinoDataHeatCnt
 import RPi.GPIO as GPIO
 import time
 from sub.SpiRW import SpiRW
+from sub.YaniStateMachine import StateMachine
 import csv
 #import pandas
 
@@ -41,6 +42,9 @@ class TempGui(tkinter.Frame):
             """ユーザー用コントロールボックスオブジェクト"""
             #----------------------------------------------
             def __init__(self):
+                self.sw_previous_state = 1      #前回のツイッチの状況保持関数
+                self.naga_oshi_kenshutu = 0     #長押しのカウンター変数初期化
+
                 #GPIOのPin指定モードをBCMへ設定
                 GPIO.setmode(GPIO.BCM)
                 #------  使用するピンの入出力宣言
@@ -54,7 +58,7 @@ class TempGui(tkinter.Frame):
                 #出力ピンの初期値設定
                 GPIO.output(TempGui._CNT0, 0)      #Lo出力
                 GPIO.output(TempGui._CNT1, 0)      #Lo出力
-                GPIO.output(TempGui._CNT2, 1)      #Lo出力0
+                GPIO.output(TempGui._CNT2, 0)      #Lo出力0
 
             #----------------------------------------------
             def set_led_mode(self, cnt2 ,cnt1 ,cnt0):
@@ -67,11 +71,35 @@ class TempGui(tkinter.Frame):
 
             #----------------------------------------------
             def emo_check(self):
-                print(GPIO.input(TempGui._EMO_SW))
+                if ((GPIO.input(TempGui._EMO_SW) == 0)):
+                    #EMOスイッチを検出するとプログラムループがここで止まる→Arduinoはタイムアウトで加熱停止
+                    messagebox.showwarning("EMO", "EMO Switch Detected! System is LOCKED!")
 
             #----------------------------------------------
             def start_sw_check(self):
-                print(GPIO.input(TempGui._SW_FN))
+                """Function スイッチの入力検出(一致検出の結果を１回だけ返してデフォルトを保持する)"""
+                self.sw_state = 1                             #呼び出し元に値を渡す変数初期化
+                if ( (GPIO.input(TempGui._SW_FN)) == 0 ):     #スイッチの状態を取得
+                    time.sleep(0.1)                           #100ms待つ
+                    self.naga_oshi_kenshutu += 1              #長押し検出カウンターインクリメント
+                    if ( (GPIO.input(TempGui._SW_FN)) == 0 ): #もう一度スイッチを見る
+                        if (self.sw_previous_state == 1 ):    #前回のスイッチ状態がOFFのとき
+                            self.sw_previous_state = 0        #前回のスイッチがONになったよフラグ
+                            self.sw_state = 0                 #呼び出し元に値を渡す変数にONフラグ格納
+                            print("Function SW Detect ")      #スイッチ・オン表示
+                else:
+                    self.sw_previous_state = 1               #ツイッチがOFFだったら前回の状態をOFFに設定
+                    self.naga_oshi_kenshutu = 0              #長押し検出カウンターリセット
+
+                return(self.sw_state)                        #スイッチの状態を返す
+
+            #-----------------------------------------------
+            def get_nagaoshi_state(self):
+                """長押し検出カウンターの値を返す関数"""
+                return(self.naga_oshi_kenshutu)
+
+
+
 
 
 
@@ -221,6 +249,7 @@ class TempGui(tkinter.Frame):
 #----------------------------------------------------
 #-------まだTopLevelClassの__init__は続くよ
         self.num = 0
+        self.naga_oshi_kenshutu = 0
 
         super().__init__(master, bg="skyblue",)
         self.pack()
@@ -246,6 +275,7 @@ class TempGui(tkinter.Frame):
 
         self.usr_cnt = UserControler()           #ユーザーコントロールボックスオブジェクト
 #        self.usr_cnt.set_led_mode(0,0,1)         #コントロールボックスのLEDを初期化
+        self.s_machine = StateMachine("yani")   #ステートマシンオブジェクト生成
 
 
         #クラス変数(UIの値)初期値設定
@@ -331,9 +361,69 @@ class TempGui(tkinter.Frame):
         self.arduino_param_2['target_temp'] = self.main_ui.cnt_target2.get_target_value()
         self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
 
-        #---温度＋距離＋EMO,WSを監視するルーチンをここに追記する！！！
+        #---------------------------------
+        #--- 各種スイッチ類の値取得  -------
+        #---------------------------------
         self.usr_cnt.emo_check()
-        self.usr_cnt.start_sw_check()
+        self.fn_sw_state = self.usr_cnt.start_sw_check()
+
+        #--------------------------------
+        #---   ステートマシンの状態遷移
+        #-------------------------------
+        #Func_SWの値取得
+        #------------------
+        if ((self.s_machine.state)== 'idle'):
+            """State = 'idleのときの処理"""
+            if (not(self.fn_sw_state)):
+                self.fn_sw_state = 1
+                # スイッチON時の処理をここに記述
+                print ("SW ON")
+                self.s_machine.func_sw()
+                self.usr_cnt.set_led_mode(0,0,1)
+                print(self.s_machine.state)
+        #------------------
+        if((self.s_machine.state)== 'meas_dist'):
+            """state = meas_distのときの処理"""
+            if(self.arduino_param_0['distance'] <= 100):
+                self.s_machine.in_range()
+                self.usr_cnt.set_led_mode(0,1,0)
+                print(self.s_machine.state)
+        #------------------
+        if((self.s_machine.state)== 'ready'):
+            """state = readyのときの処理"""
+            if(self.arduino_param_0['distance'] > 100 ):
+                self.s_machine.out_range()
+                self.usr_cnt.set_led_mode(0,0,1)
+                print(self.s_machine.state)
+            if((self.arduino_param_0['distance'] <= 50)):
+                self.s_machine.too_short()
+                self.usr_cnt.set_led_mode(0,1,1)
+                print(self.s_machine.state)
+            if (not(self.fn_sw_state)):
+                self.fn_sw_state = 1
+                print ("SW ON")
+                self.s_machine.func_sw()
+                self.usr_cnt.set_led_mode(1,0,0)
+                print(self.s_machine.state)
+        #------------------
+        if((self.s_machine.state)== 'proximity'):
+            """state = proximityのときの処理"""
+            if((self.arduino_param_0['distance'] > 50)):
+                self.s_machine.in_range()
+                self.usr_cnt.set_led_mode(0,1,0)
+                print(self.s_machine.state)
+
+
+
+
+        #------------------
+        if (self.usr_cnt.get_nagaoshi_state() == 10 ) :
+            #スイッチ長押し時の処理をここに記述
+            print("長押し検出")
+            self.s_machine.long_press()
+            self.usr_cnt.set_led_mode(0,0,0)
+            print(self.s_machine.state)
+
 
 
 #        if 10 > float(self.tmp_target["text"]):

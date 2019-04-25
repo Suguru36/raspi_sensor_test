@@ -22,9 +22,9 @@ import csv
 
 class TempGui(tkinter.Frame):
    #--------- Data Cluster --------
-    arduino_param_0 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
-    arduino_param_1 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
-    arduino_param_2 = {'ir_temp' : 0 , 'ambient_temp' : 0 ,'distance' : 0 , 'target_temp' : 50 , 'distance_limit' : 300, 'heatter_condition' : False}
+    arduino_param_0 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
+    arduino_param_1 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
+    arduino_param_2 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
 
     #-------- class 定数の定義 GPIOのPin番号定義(BCM)
     _CNT0 = 22         #CNT0 コントロールBit0
@@ -194,19 +194,21 @@ class TempGui(tkinter.Frame):
                 #表示部分
                 self.label_on_off = tkinter.Label(self.tmp_control_fan, text=u'OFF ', bg='green', relief=tkinter.SUNKEN ,bd = 5)
                 self.label_on_off.pack(side=tkinter.RIGHT) #左から詰める
-            def set_state_ON(self):
+            def set_state(self,state):
                 #外部スイッチのＵＩ「ＯＮ」表示
-                self.label_on_off["text"] = "ON"
-                self.label_on_off["bg"] = "red"
-                self.label_on_off.relief=tkinter.RAISED
-            def set_state_OFF(self):
-                #外部スイッチのＵＩ「ＯＦＦ」表示
-                self.label_on_off["text"] = "OFF"
-                self.label_on_off["bg"] = "green"
-                self.label_on_off.relief=tkinter.SUNKEN
+                if (state == 1):
+                    self.label_on_off["text"] = "ON"
+                    self.label_on_off["bg"] = "red"
+                    self.label_on_off.relief=tkinter.RAISED
+                if (state == 0):
+                    #外部スイッチのＵＩ「ＯＦＦ」表示
+                    self.label_on_off["text"] = "OFF"
+                    self.label_on_off["bg"] = "green"
+                    self.label_on_off.relief=tkinter.SUNKEN
+
         #-----------------------------------------------------------------------------
         class ArduinoDataFrame(object):
-            """Arduino単位のUIを発生させるクラス（3個分）"""
+            """全ArduinoのUIを定義するClass"""
             def __init__(self):
                 #Arduino単位のフレームを生成
                 arduino0_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
@@ -219,7 +221,10 @@ class TempGui(tkinter.Frame):
                 self.amb_temp0    = SensorDataUiFrame(arduino0_fraeme, "周辺温度", "℃", "skyblue", "lightgray", "00000")
                 self.distance0    = SensorDataUiFrame(arduino0_fraeme, "測距センサー", "mm", "pink", "lightgray", "00000")
                 self.cnt_target0   = TempControlTargetFrame(arduino0_fraeme, "設定温度", "Set", "55", "℃")
-                self.heater_state0 = HeaterIndicatorFrame(arduino0_fraeme, "ヒーター(未完成)")
+                self.heater_workdet0 = HeaterIndicatorFrame(arduino0_fraeme, "ワーク検出")
+                self.heater_enable0 = HeaterIndicatorFrame(arduino0_fraeme, "加熱許可")
+                self.heater_state0 = HeaterIndicatorFrame(arduino0_fraeme, "ヒーターON/OFF")
+                self.heater_reach0 = HeaterIndicatorFrame(arduino0_fraeme, "温度到達")
 
                 #Arduino単位のフレームを生成
                 arduino1_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
@@ -232,7 +237,10 @@ class TempGui(tkinter.Frame):
                 self.amb_temp1    = SensorDataUiFrame(arduino1_fraeme, "周辺温度", "℃", "skyblue", "lightgray", "00000")
                 self.distance1    = SensorDataUiFrame(arduino1_fraeme, "測距センサー", "mm", "pink", "lightgray", "00000")
                 self.cnt_target1   = TempControlTargetFrame(arduino1_fraeme, "設定温度", "Set", "55", "℃")
-                self.heater_state1 = HeaterIndicatorFrame(arduino1_fraeme, "ヒーター(未完成)")
+                self.heater_workdet1 = HeaterIndicatorFrame(arduino1_fraeme, "ワーク検出")
+                self.heater_enable1 = HeaterIndicatorFrame(arduino1_fraeme, "加熱許可")
+                self.heater_state1 = HeaterIndicatorFrame(arduino1_fraeme, "ヒーターON/OFF")
+                self.heater_reach1 = HeaterIndicatorFrame(arduino1_fraeme, "温度到達")
 
                 #Arduino単位のフレームを生成
                 arduino2_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
@@ -245,7 +253,40 @@ class TempGui(tkinter.Frame):
                 self.amb_temp2    = SensorDataUiFrame(arduino2_fraeme, "周辺温度", "℃", "skyblue", "lightgray", "00000")
                 self.distance2    = SensorDataUiFrame(arduino2_fraeme, "測距センサー", "mm", "pink", "lightgray", "00000")
                 self.cnt_target2   = TempControlTargetFrame(arduino2_fraeme, "設定温度", "Set", "55", "℃")
-                self.heater_state2 = HeaterIndicatorFrame(arduino2_fraeme, "ヒーター(未完成)")
+                self.heater_workdet2 = HeaterIndicatorFrame(arduino2_fraeme, "ワーク検出")
+                self.heater_enable2 = HeaterIndicatorFrame(arduino2_fraeme, "加熱許可")
+                self.heater_state2 = HeaterIndicatorFrame(arduino2_fraeme, "ヒーターON/OFF")
+                self.heater_reach2 = HeaterIndicatorFrame(arduino2_fraeme, "温度到達")
+#-------
+            def main_ui_update(self):
+                #Arduino 0
+                self.ir_temp0.change_value(TempGui.arduino_param_0['ir_temp'])
+                self.amb_temp0.change_value(TempGui.arduino_param_0['ambient_temp'])
+                self.distance0.change_distance(TempGui.arduino_param_0['distance'])
+                self.cnt_target0.set_target_value(TempGui.arduino_param_0['target_temp'])
+                self.heater_workdet0.set_state(TempGui.arduino_param_0['work_det'])
+                self.heater_enable0.set_state(TempGui.arduino_param_0['heater_enable'])
+                self.heater_state0.set_state(TempGui.arduino_param_0['heater_condition'])
+                self.heater_reach0.set_state(TempGui.arduino_param_0['temp_reach'])
+                #Arduino 1
+                self.ir_temp1.change_value(TempGui.arduino_param_1['ir_temp'])
+                self.amb_temp1.change_value(TempGui.arduino_param_1['ambient_temp'])
+                self.distance1.change_distance(TempGui.arduino_param_1['distance'])
+                self.cnt_target1.set_target_value(TempGui.arduino_param_1['target_temp'])
+                self.heater_workdet1.set_state(TempGui.arduino_param_1['work_det'])
+                self.heater_enable1.set_state(TempGui.arduino_param_1['heater_enable'])
+                self.heater_state1.set_state(TempGui.arduino_param_1['heater_condition'])
+                self.heater_reach1.set_state(TempGui.arduino_param_1['temp_reach'])
+                #Arduino 0
+                self.ir_temp2.change_value(TempGui.arduino_param_2['ir_temp'])
+                self.amb_temp2.change_value(TempGui.arduino_param_2['ambient_temp'])
+                self.distance2.change_distance(TempGui.arduino_param_2['distance'])
+                self.cnt_target2.set_target_value(TempGui.arduino_param_2['target_temp'])
+                self.heater_workdet2.set_state(TempGui.arduino_param_2['work_det'])
+                self.heater_enable2.set_state(TempGui.arduino_param_2['heater_enable'])
+                self.heater_state2.set_state(TempGui.arduino_param_2['heater_condition'])
+                self.heater_reach2.set_state(TempGui.arduino_param_2['temp_reach'])
+
 #----------------------------------------------------
 #-------まだTopLevelClassの__init__は続くよ
         self.num = 0
@@ -274,39 +315,8 @@ class TempGui(tkinter.Frame):
         self.main_ui = ArduinoDataFrame()        #メインＵＩ生成
 
         self.usr_cnt = UserControler()           #ユーザーコントロールボックスオブジェクト
-#        self.usr_cnt.set_led_mode(0,0,1)         #コントロールボックスのLEDを初期化
-        self.s_machine = StateMachine("yani")   #ステートマシンオブジェクト生成
-
-
-        #クラス変数(UIの値)初期値設定
-        self.arduino_param_0['ir_temp'] = 999.99   #温度設定
-        self.arduino_param_0['ambient_temp'] = 999.99
-        self.arduino_param_0['distance'] =9999
-        self.arduino_param_0['heatter_condition'] = False
-
-        self.main_ui.ir_temp0.change_value(self.arduino_param_0['ir_temp'])
-        self.main_ui.amb_temp0.change_value(self.arduino_param_0['ambient_temp'])
-        self.main_ui.distance0.change_distance(self.arduino_param_0['distance'])
-        self.main_ui.cnt_target0.set_target_value(self.arduino_param_0['target_temp'])
-
-        self.arduino_param_1['ir_temp'] = 999.99   #温度設定
-        self.arduino_param_1['ambient_temp'] = 999.99
-        self.arduino_param_1['distance'] =9999
-        self.arduino_param_1['heatter_condition'] = False
-        self.main_ui.ir_temp1.change_value(self.arduino_param_1['ir_temp'])
-        self.main_ui.amb_temp1.change_value(self.arduino_param_1['ambient_temp'])
-        self.main_ui.distance1.change_distance(self.arduino_param_1['distance'])
-        self.main_ui.cnt_target1.set_target_value(self.arduino_param_1['target_temp'])
-
-
-        self.arduino_param_2['ir_temp'] = 999.99   #温度設定
-        self.arduino_param_2['ambient_temp'] = 999.99
-        self.arduino_param_2['distance'] =9999
-        self.arduino_param_2['heatter_condition'] = False
-        self.main_ui.ir_temp2.change_value(self.arduino_param_2['ir_temp'])
-        self.main_ui.amb_temp2.change_value(self.arduino_param_2['ambient_temp'])
-        self.main_ui.distance2.change_distance(self.arduino_param_2['distance'])
-        self.main_ui.cnt_target2.set_target_value(self.arduino_param_2['target_temp'])
+        self.s_machine = StateMachine("yani")    #ステートマシンオブジェクト生成
+        self.main_ui.main_ui_update()            #UIの値を親グラス変数の値にアップデート（初期化）
 
         self.update()
 
@@ -314,73 +324,83 @@ class TempGui(tkinter.Frame):
 
     def update(self):
         """100ms/１回の更新頻度"""
-        #Arduino0のデータ取得
+        #Arduino0,1,2のデータ取得（SPI Read）
         self.arduino0_data = self.ardu0.GetDataArd()
-        #放射温度
-        self.arduino_param_0['ir_temp'] = (self.arduino0_data)[0]   #温度設定
-        self.main_ui.ir_temp0.change_value(self.arduino_param_0['ir_temp'])
-        #周辺温度
-        self.arduino_param_0['ambient_temp'] = (self.arduino0_data)[1]   #温度設定
-        self.main_ui.amb_temp0.change_value(self.arduino_param_0['ambient_temp'])
-        #レーザー測距計
-        self.arduino_param_0['distance'] = (self.arduino0_data)[2]   #温度設定
-        self.main_ui.distance0.change_distance(self.arduino_param_0['distance'])
-        #UIの設定温度取得
-        self.arduino_param_0['target_temp'] = self.main_ui.cnt_target0.get_target_value()
-        self.ardu0.SetTempTarget(self.arduino_param_0['target_temp'])
-
-        #-----------------------------
-        #Arduino1のデータ取得
         self.arduino1_data = self.ardu1.GetDataArd()
-        #放射温度
-        self.arduino_param_1['ir_temp'] = (self.arduino1_data)[0]   #温度設定
-        self.main_ui.ir_temp1.change_value(self.arduino_param_1['ir_temp'])
-        #周辺温度
-        self.arduino_param_1['ambient_temp'] = (self.arduino1_data)[1]   #温度設定
-        self.main_ui.amb_temp1.change_value(self.arduino_param_1['ambient_temp'])
-        #レーザー測距計
-        self.arduino_param_1['distance'] = (self.arduino1_data)[2]   #温度設定
-        self.main_ui.distance1.change_distance(self.arduino_param_1['distance'])
-        #UIの設定温度取得
-        self.arduino_param_1['target_temp'] = self.main_ui.cnt_target1.get_target_value()
-        self.ardu1.SetTempTarget(self.arduino_param_1['target_temp'])
-
-        #-----------------------------
-        #Arduino2のデータ取得
         self.arduino2_data = self.ardu2.GetDataArd()
-        #放射温度
-        self.arduino_param_2['ir_temp'] = (self.arduino2_data)[0]   #温度設定
-        self.main_ui.ir_temp2.change_value(self.arduino_param_2['ir_temp'])
-        #周辺温度
-        self.arduino_param_2['ambient_temp'] = (self.arduino2_data)[1]   #温度設定
-        self.main_ui.amb_temp2.change_value(self.arduino_param_2['ambient_temp'])
-        #レーザー測距計
-        self.arduino_param_2['distance'] = (self.arduino2_data)[2]   #温度設定
-        self.main_ui.distance2.change_distance(self.arduino_param_2['distance'])
-        #UIの設定温度取得
+
+        #取得した値をClass変数に格納する
+        self.arduino_param_0['ir_temp'] = (self.arduino0_data)[0]   #放射温度計
+        self.arduino_param_1['ir_temp'] = (self.arduino1_data)[0]
+        self.arduino_param_2['ir_temp'] = (self.arduino2_data)[0]
+        self.arduino_param_0['ambient_temp'] = (self.arduino0_data)[1]   #周辺温度
+        self.arduino_param_1['ambient_temp'] = (self.arduino1_data)[1]
+        self.arduino_param_2['ambient_temp'] = (self.arduino2_data)[1]
+        self.arduino_param_0['distance'] = (self.arduino0_data)[2]   #距離計データ
+        self.arduino_param_1['distance'] = (self.arduino1_data)[2]
+        self.arduino_param_2['distance'] = (self.arduino2_data)[2]
+        self.arduino_param_0['target_temp'] = self.main_ui.cnt_target0.get_target_value()
+        self.arduino_param_1['target_temp'] = self.main_ui.cnt_target1.get_target_value()
         self.arduino_param_2['target_temp'] = self.main_ui.cnt_target2.get_target_value()
-        self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
+        #-----------------------------
+        self.main_ui.main_ui_update()            #UIの値を親グラス変数の値にアップデート
 
         #---------------------------------
-        #--- 各種スイッチ類の値取得  -------
+        #--- コントロールBOXのスイッチ類の値取得
         #---------------------------------
         self.usr_cnt.emo_check()
         self.fn_sw_state = self.usr_cnt.start_sw_check()
 
         #--------------------------------
-        #---   ステートマシンの状態遷移
+        #---   ステートマシンの状態遷移（未整理べた書き、なんとかしましょう）
         #-------------------------------
         #Func_SWの値取得
         #------------------
+        #ワークの有無検出
+        if ((self.arduino_param_0['distance']) <= 100): #ヒーター1が50mm以内
+            self.arduino_param_0['work_det'] = True
+        else:
+            self.arduino_param_0['work_det'] = False
+
+        if ((self.arduino_param_1['distance']) <= 150):#ヒーター2が100mm以内
+            self.arduino_param_1['work_det'] = True
+        else:
+            self.arduino_param_1['work_det'] = False
+
+        if ((self.arduino_param_2['distance']) <= 150):#ヒーター3が150mm以内
+            self.arduino_param_2['work_det'] = True
+        else:
+            self.arduino_param_2['work_det'] = False
+
+        #-------------------------------
+        #    Idle ステート時の処理
         if ((self.s_machine.state)== 'idle'):
             """State = 'idleのときの処理"""
+            # UIのBOOLスイッチの値を初期化
+            self.arduino_param_0['heater_condition'] = bool(self.ardu0.GetHeaterCondition()[0])
+            self.arduino_param_1['heater_condition'] = bool(self.ardu1.GetHeaterCondition()[0])
+            self.arduino_param_2['heater_condition'] = bool(self.ardu2.GetHeaterCondition()[0])
+
+            self.arduino_param_0['heater_enable'] = False
+            self.arduino_param_1['heater_enable'] = False
+            self.arduino_param_2['heater_enable'] = False
+
+            self.arduino_param_0['temp_reach'] = False
+            self.arduino_param_1['temp_reach'] = False
+            self.arduino_param_2['temp_reach'] = False
+            #タイマー用変数の初期化
+            self.time = 0
+            self.past_time = 0
+            self.cycle_time = 0
+            #スイッチが押されたらの処理
             if (not(self.fn_sw_state)):
                 self.fn_sw_state = 1
                 # スイッチON時の処理をここに記述
                 print ("SW ON")
-                self.s_machine.func_sw()
+                self.s_machine.func_sw() #次のステートへ
                 self.usr_cnt.set_led_mode(0,0,1)
                 print(self.s_machine.state)
+
         #------------------
         if((self.s_machine.state)== 'meas_dist'):
             """state = meas_distのときの処理"""
@@ -388,6 +408,7 @@ class TempGui(tkinter.Frame):
                 self.s_machine.in_range()
                 self.usr_cnt.set_led_mode(0,1,0)
                 print(self.s_machine.state)
+
         #------------------
         if((self.s_machine.state)== 'ready'):
             """state = readyのときの処理"""
@@ -404,8 +425,17 @@ class TempGui(tkinter.Frame):
                 print ("SW ON")
                 self.s_machine.func_sw()
                 self.usr_cnt.set_led_mode(1,0,0)
+                #加熱ステート移動の前にヒーター何本加熱するか検出
+                if ((self.arduino_param_0['distance']) <= 100): #ヒーター1が50mm以内
+                    self.arduino_param_0['heater_enable'] = True
+                    if ((self.arduino_param_1['distance']) <= 150):#ヒーター2が100mm以内
+                        self.arduino_param_1['heater_enable'] = True
+                        if ((self.arduino_param_2['distance']) <= 150):#ヒーター3が150mm以内
+                            self.arduino_param_2['heater_enable'] = True
                 print(self.s_machine.state)
+
         #------------------
+        #近接警告
         if((self.s_machine.state)== 'proximity'):
             """state = proximityのときの処理"""
             if((self.arduino_param_0['distance'] > 50)):
@@ -413,8 +443,141 @@ class TempGui(tkinter.Frame):
                 self.usr_cnt.set_led_mode(0,1,0)
                 print(self.s_machine.state)
 
+        #------------------
+        #heat の処理
+        if((self.s_machine.state)== 'heat'):
+            #
+            #タイムアウト処理を追加する必要がある
+            #
+            #
+            #EnableフラグのあるヒーターのみONする
+            if (self.arduino_param_0['heater_enable']): #ヒーター1が50mm以内
+                self.ardu0.SetHeatEnableFlag()     #ヒーター1の加熱許可フラグ
+                #温度判定
+                self.arduino_param_0['temp_reach'] = bool(self.ardu0.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_0['temp_reach'] = True
+            #------------
+            if (self.arduino_param_1['heater_enable']):#ヒーター2が100mm以内
+                self.ardu1.SetHeatEnableFlag()     #ヒーター2の加熱許可フラグ
+                #温度判定
+                self.arduino_param_1['temp_reach'] = bool(self.ardu1.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_1['temp_reach'] = True
+                #------------
+            if (self.arduino_param_2['heater_enable']):#ヒーター3が150mm以内
+                self.ardu2.SetHeatEnableFlag()     #ヒーター3の加熱許可フラグ
+                #温度判定
+                self.arduino_param_2['temp_reach'] = bool(self.ardu2.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_2['temp_reach'] = True
+            #------------
+            #HeaterのUI用の変数を更新
+            self.arduino_param_0['heater_condition'] = bool(self.ardu0.GetHeaterCondition()[0])
+            self.arduino_param_1['heater_condition'] = bool(self.ardu1.GetHeaterCondition()[0])
+            self.arduino_param_2['heater_condition'] = bool(self.ardu2.GetHeaterCondition()[0])
+            #加熱完了フラグ読み取り（すべての稼働中ヒーターが温度到達したら次）
+            if (self.arduino_param_0['temp_reach'] and self.arduino_param_1['temp_reach'] and self.arduino_param_2['temp_reach']):
+                self.s_machine.temp_reach()
+                self.usr_cnt.set_led_mode(1,0,1)
+                print(self.s_machine.state)
 
 
+            pass
+        #------------------
+        #keep の処理
+        if((self.s_machine.state)== 'keep'):
+            #HeaterのUI用の変数を更新
+            #EnableフラグのあるヒーターのみONする
+            if (self.arduino_param_0['heater_enable']): #ヒーター1が50mm以内
+                self.ardu0.SetHeatEnableFlag()     #ヒーター1の加熱許可フラグ
+                #温度判定
+                self.arduino_param_0['temp_reach'] = bool(self.ardu0.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_0['temp_reach'] = True
+            #------------
+            if (self.arduino_param_1['heater_enable']):#ヒーター2が100mm以内
+                self.ardu1.SetHeatEnableFlag()     #ヒーター2の加熱許可フラグ
+                #温度判定
+                self.arduino_param_1['temp_reach'] = bool(self.ardu1.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_1['temp_reach'] = True
+                #------------
+            if (self.arduino_param_2['heater_enable']):#ヒーター3が150mm以内
+                self.ardu2.SetHeatEnableFlag()     #ヒーター3の加熱許可フラグ
+                #温度判定
+                self.arduino_param_2['temp_reach'] = bool(self.ardu2.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_2['temp_reach'] = True
+            #------------
+            #HeaterのUI用の変数を更新
+            self.arduino_param_0['heater_condition'] = bool(self.ardu0.GetHeaterCondition()[0])
+            self.arduino_param_1['heater_condition'] = bool(self.ardu1.GetHeaterCondition()[0])
+            self.arduino_param_2['heater_condition'] = bool(self.ardu2.GetHeaterCondition()[0])
+            #加熱完了フラグ読み取り（すべての稼働中ヒーターが温度到達したら次）
+            if (self.arduino_param_0['temp_reach'] and self.arduino_param_1['temp_reach'] and self.arduino_param_2['temp_reach']):
+                #温度維持時間をカウントする
+                if (self.time == 0):
+                    self.time = time.time()
+                else:
+                    pass
+
+                self.cycle_time = time.time() - self.time
+                self.past_time = self.past_time + self.cycle_time
+                self.time = time.time()
+                print(self.past_time)
+            pass
+
+            if (self.past_time >= 30 ) :
+                self.s_machine.timer()
+                self.usr_cnt.set_led_mode(1,1,0)
+                print(self.s_machine.state)
+            pass
+
+        #------------------
+        #finish の処理
+        if((self.s_machine.state)== 'finish'):
+            #アラーム呼び出し、FnSW待ち
+            #EnableフラグのあるヒーターのみONする
+            if (self.arduino_param_0['heater_enable']): #ヒーター1が50mm以内
+                self.ardu0.SetHeatEnableFlag()     #ヒーター1の加熱許可フラグ
+                #温度判定
+                self.arduino_param_0['temp_reach'] = bool(self.ardu0.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_0['temp_reach'] = True
+            #------------
+            if (self.arduino_param_1['heater_enable']):#ヒーター2が100mm以内
+                self.ardu1.SetHeatEnableFlag()     #ヒーター2の加熱許可フラグ
+                #温度判定
+                self.arduino_param_1['temp_reach'] = bool(self.ardu1.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_1['temp_reach'] = True
+                #------------
+            if (self.arduino_param_2['heater_enable']):#ヒーター3が150mm以内
+                self.ardu2.SetHeatEnableFlag()     #ヒーター3の加熱許可フラグ
+                #温度判定
+                self.arduino_param_2['temp_reach'] = bool(self.ardu2.GetTempReach()[0])
+            else:
+                #温度到達フラグTrue
+                self.arduino_param_2['temp_reach'] = True
+            #------------
+            #HeaterのUI用の変数を更新
+            self.arduino_param_0['heater_condition'] = bool(self.ardu0.GetHeaterCondition()[0])
+            self.arduino_param_1['heater_condition'] = bool(self.ardu1.GetHeaterCondition()[0])
+            self.arduino_param_2['heater_condition'] = bool(self.ardu2.GetHeaterCondition()[0])
+            #------------
+            if (not(self.fn_sw_state)):
+                self.s_machine.func_sw()
+                self.usr_cnt.set_led_mode(0,0,0)
+            pass
 
         #------------------
         if (self.usr_cnt.get_nagaoshi_state() == 10 ) :

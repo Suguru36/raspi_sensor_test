@@ -27,6 +27,16 @@ class GetAruduinoDataHeatCnt(SpiRW):
             #
         return (self.temp, self.amb_temp, self.dist)
 
+    def GetTempReach(self):
+        """ヒーターの状況フラグ取得"""
+        self.temp_reach   = self.spi_read(0x07)  # 温度到達フラグ
+        return (self.temp_reach)
+
+    def GetHeaterCondition(self):
+        """ヒーターの状況フラグ取得"""
+        self.heater_power = self.spi_read(0x08)  # ヒーターのON/OFFフラグ
+        return (self.heater_power)
+
     def SetTempTarget(self, temp):
         """温度は℃で転送する"""
         self.spi_write(0x81, temp)
@@ -36,6 +46,9 @@ class GetAruduinoDataHeatCnt(SpiRW):
     def SetDistanceLimit(self, distance):
         """距離はcm単位で転送する"""
         self.spi_write(0x83, distance)
+    def SetHeatEnableFlag(self):
+        """マイコン側で２病に一回リセットされるので書き込み続ける"""
+        self.spi_write(0x84, 1)
 
 #------------------------------------------------
 if __name__ == '__main__':

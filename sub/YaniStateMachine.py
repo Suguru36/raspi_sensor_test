@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+    #! /usr/bin/env python3
 # coding: UTF-8
 #ラベルの表示確認
 #2019.01.16 by SGR
@@ -8,12 +8,20 @@ from transitions import Machine
 
 class StateMachine(object):
     #状態の定義
-    states = ['idle', 'meas_dist', 'ready','proximity', 'heat','keep','finish','emo']
+    states = ['idle', 'meas_dist', 'ready','proximity', 'heat','keep','finish','emo','proximity_error']
 
     #初期化（ステートマシンの定義：とりうる状態の定義、初期状態の定義、各種遷移と紐付くアクションの定義）
     def __init__(self, name):
         self.name = name
         self.machine =      Machine(model=self, states=StateMachine.states, initial='idle', auto_transitions=False)
+
+        self.machine.add_transition(trigger='too_close'  , source='idle'     , dest='proximity_error' ,before= 'action_To_proximity_error')
+        self.machine.add_transition(trigger='too_close'  , source='heat'      , dest='proximity_error' ,before= 'action_To_proximity_error')
+        self.machine.add_transition(trigger='too_close'  , source='keep'      , dest='proximity_error' ,before= 'action_To_proximity_error')
+        self.machine.add_transition(trigger='too_close'  , source='finish'    , dest='proximity_error' ,before= 'action_To_proximity_error')
+
+        self.machine.add_transition(trigger='close_releace'  , source='proximity_error' , dest='idle' ,before= 'action_To_idle')
+
 
         self.machine.add_transition(trigger='func_sw'    , source='idle'     , dest='meas_dist' ,before= 'action_idle2meas')
         self.machine.add_transition(trigger='in_range'   , source='meas_dist', dest='ready'     ,before= 'action_ready2in_range')
@@ -47,6 +55,14 @@ class StateMachine(object):
 #---------------------------------------------
 #--------- 以下、遷移時のアクション ----------
 #---------------------------------------------
+    def action_To_idle(self):
+        print("idle")
+        self.display_state()
+#----------------------
+    def action_To_proximity_error(self):
+        print("******TOO CLOSE ERROR*******")
+        self.display_state()
+#----------------------
     def action_idle2meas(self):
         print ("*** from idle to meas_distance ***")
         self.display_state()

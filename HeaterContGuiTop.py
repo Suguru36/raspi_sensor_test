@@ -26,6 +26,8 @@ class TempGui(tkinter.Frame):
     arduino_param_1 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
     arduino_param_2 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
 
+    PROXIMILITTY_LIMIT = 30 #近接判定距離定数
+
     #-------- class 定数の定義 GPIOのPin番号定義(BCM)
     _CNT0 = 22         #CNT0 コントロールBit0
     _CNT1 = 23         #CNT2 コントロールBit1
@@ -210,6 +212,8 @@ class TempGui(tkinter.Frame):
         class ArduinoDataFrame(object):
             """全ArduinoのUIを定義するClass"""
             def __init__(self):
+
+
                 #Arduino単位のフレームを生成
                 arduino0_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 5)
                 arduino0_fraeme.pack(anchor=tkinter.CENTER, side = tkinter.LEFT, padx=10) #anchor=tkinter.CENTER 中心に揃えて
@@ -329,7 +333,7 @@ class TempGui(tkinter.Frame):
         self.arduino1_data = self.ardu1.GetDataArd()
         self.arduino2_data = self.ardu2.GetDataArd()
 
-        #取得した値をClass変数に格納する
+        #Arduinoから取得した値をClass変数に格納する
         self.arduino_param_0['ir_temp'] = (self.arduino0_data)[0]   #放射温度計
         self.arduino_param_1['ir_temp'] = (self.arduino1_data)[0]
         self.arduino_param_2['ir_temp'] = (self.arduino2_data)[0]
@@ -339,9 +343,14 @@ class TempGui(tkinter.Frame):
         self.arduino_param_0['distance'] = (self.arduino0_data)[2]   #距離計データ
         self.arduino_param_1['distance'] = (self.arduino1_data)[2]
         self.arduino_param_2['distance'] = (self.arduino2_data)[2]
+        #UIから設定されたターゲット温度を取得
         self.arduino_param_0['target_temp'] = self.main_ui.cnt_target0.get_target_value()
         self.arduino_param_1['target_temp'] = self.main_ui.cnt_target1.get_target_value()
         self.arduino_param_2['target_temp'] = self.main_ui.cnt_target2.get_target_value()
+        #UIから取得したターゲット温度をArduinoに転送
+        self.ardu0.SetTempTarget(self.arduino_param_0['target_temp'])
+        self.ardu1.SetTempTarget(self.arduino_param_1['target_temp'])
+        self.ardu2.SetTempTarget(self.arduino_param_2['target_temp'])
         #-----------------------------
         self.main_ui.main_ui_update()            #UIの値を親グラス変数の値にアップデート
 
@@ -371,6 +380,18 @@ class TempGui(tkinter.Frame):
             self.arduino_param_2['work_det'] = True
         else:
             self.arduino_param_2['work_det'] = False
+
+        #もし距離センサーで近接状態を検出したら(測距中以外の動作をここに記述)
+        if (((self.s_machine.state)== 'idle') or ((self.s_machine.state)== 'heat') or ((self.s_machine.state)== 'keep') or ((self.s_machine.state)== 'finish')):
+            if (((self.arduino_param_0['distance']) <= self.PROXIMILITTY_LIMIT) or ((self.arduino_param_1['distance']) <= self.PROXIMILITTY_LIMIT) or ((self.arduino_param_2['distance']) <= self.PROXIMILITTY_LIMIT) ):
+                self.s_machine.too_close()
+                self.usr_cnt.set_led_mode(0,1,1)
+                print(self.s_machine.state)
+        #近接エラーフラグが立っていたら復帰フラグ監視モードへ
+        if ((self.s_machine.state) == 'proximity_error'):
+            if (((self.arduino_param_0['distance']) > self.PROXIMILITTY_LIMIT) and ((self.arduino_param_1['distance']) > self.PROXIMILITTY_LIMIT) and ((self.arduino_param_2['distance']) > self.PROXIMILITTY_LIMIT) ):
+                self.s_machine.close_releace()
+                self.usr_cnt.set_led_mode(0,0,0)
 
         #-------------------------------
         #    Idle ステート時の処理
@@ -416,7 +437,7 @@ class TempGui(tkinter.Frame):
                 self.s_machine.out_range()
                 self.usr_cnt.set_led_mode(0,0,1)
                 print(self.s_machine.state)
-            if((self.arduino_param_0['distance'] <= 50)):
+            if((self.arduino_param_0['distance'] <= self.PROXIMILITTY_LIMIT)):
                 self.s_machine.too_short()
                 self.usr_cnt.set_led_mode(0,1,1)
                 print(self.s_machine.state)
@@ -455,6 +476,7 @@ class TempGui(tkinter.Frame):
                 self.ardu0.SetHeatEnableFlag()     #ヒーター1の加熱許可フラグ
                 #温度判定
                 self.arduino_param_0['temp_reach'] = bool(self.ardu0.GetTempReach()[0])
+                print(self.ardu0.GetTempReach())
             else:
                 #温度到達フラグTrue
                 self.arduino_param_0['temp_reach'] = True

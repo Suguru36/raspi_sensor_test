@@ -25,7 +25,7 @@ class TempGui(tkinter.Frame):
     arduino_param_0 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
     arduino_param_1 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
     arduino_param_2 = {'ir_temp' : 999 , 'ambient_temp' : 999 ,'distance' : 9999 , 'target_temp' : 50 , 'distance_limit' : 300, 'heater_condition' : False, 'heater_enable' : False, 'temp_reach' : False, 'work_det' : False}
-
+    state_machine_position = "non"
     PROXIMILITTY_LIMIT = 30 #近接判定距離定数
 
     #-------- class 定数の定義 GPIOのPin番号定義(BCM)
@@ -208,10 +208,35 @@ class TempGui(tkinter.Frame):
                     self.label_on_off["bg"] = "green"
                     self.label_on_off.relief=tkinter.SUNKEN
 
+
+        #-----------------------------------------------------------------------------
+        class UiTitleStateFrame(object):
+            """ヒーターの状態表示フレームクラス"""
+            def __init__(self, target_frame, name ,master = None):
+                #フレーム
+                self.title_state = tkinter.Frame(target_frame, relief = tkinter.RIDGE ,bd = 5)
+                self.title_state.pack(fill = tkinter.X, anchor=tkinter.E, padx=10) #tkinter. 中心に揃えて
+                #お題目
+                self.label_temp_fan = tkinter.Label(self.title_state, text= name , bg='TEMP CONTROLER', relief=tkinter.FLAT)
+                self.label_temp_fan.pack(side=tkinter.LEFT) #左から詰める
+
         #-----------------------------------------------------------------------------
         class ArduinoDataFrame(object):
             """全ArduinoのUIを定義するClass"""
             def __init__(self):
+                #Title表示用のフレームを生成
+                title_fraeme = tkinter.Frame(master = None, relief = tkinter.RIDGE ,bd = 10, bg='pink')
+                title_fraeme.pack(anchor=tkinter.W, side = tkinter.TOP, padx=30) #anchor=tkinter.CENTER 中心に揃えて
+                #メインフレームのタイトル
+                self.Title = tkinter.Label(title_fraeme, text= 'Heater Controler' , bg='pink', relief=tkinter.FLAT, font=("",20))
+                self.Title.pack(side=tkinter.LEFT, anchor=tkinter.W) #左から詰める
+
+                #State表示用のフレームを生成
+                state_fraeme = tkinter.Frame(master = title_fraeme, relief = tkinter.RIDGE ,bd = 2)
+                state_fraeme.pack(anchor=tkinter.E, side = tkinter.RIGHT, padx=30) #anchor=tkinter.CENTER 中心に揃えて
+                #メインフレームのタイトル
+                self.State = tkinter.Label(state_fraeme, text= 'idle' , bg='lightgray', relief=tkinter.FLAT, font=("",10))
+                self.State.pack(side=tkinter.LEFT, anchor=tkinter.W) #左から詰める
 
 
                 #Arduino単位のフレームを生成
@@ -263,6 +288,9 @@ class TempGui(tkinter.Frame):
                 self.heater_reach2 = HeaterIndicatorFrame(arduino2_fraeme, "温度到達")
 #-------
             def main_ui_update(self):
+                #ステートをGUIに反映させる
+                self.State["text"] = TempGui.state_machine_position
+
                 #Arduino 0
                 self.ir_temp0.change_value(TempGui.arduino_param_0['ir_temp'])
                 self.amb_temp0.change_value(TempGui.arduino_param_0['ambient_temp'])
@@ -363,6 +391,8 @@ class TempGui(tkinter.Frame):
         #--------------------------------
         #---   ステートマシンの状態遷移（未整理べた書き、なんとかしましょう）
         #-------------------------------
+        #ステートマシンのステートをクラス変数に反映させる
+        TempGui.state_machine_position = self.s_machine.state
         #Func_SWの値取得
         #------------------
         #ワークの有無検出
